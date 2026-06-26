@@ -517,6 +517,115 @@ async function run() {
             }
         });
 
+        app.get("/api/buyer-overview/:buyerId", async (req, res) => {
+            try {
+                const buyerId = req.params.buyerId;
+
+                const orders = await ordersCollection
+                    .find({ buyerId })
+                    .toArray();
+
+                const wishlist = await wishlistCollection
+                    .find({ buyerId })
+                    .toArray();
+
+                const totalOrders = orders.length;
+
+                const pendingOrders = orders.filter(
+                    (order) =>
+                        order.orderStatus === "pending" ||
+                        order.orderStatus === "confirmed" ||
+                        order.orderStatus === "shipped"
+                ).length;
+
+                const completedOrders = orders.filter(
+                    (order) => order.orderStatus === "delivered"
+                ).length;
+
+                const totalSpent = orders
+                    .filter(order => order.paymentStatus === "paid")
+                    .reduce(
+                        (sum, order) =>
+                            sum + Number(order.productPrice || 0),
+                        0
+                    );
+
+                res.send({
+                    success: true,
+                    data: {
+                        totalOrders,
+                        pendingOrders,
+                        completedOrders,
+                        wishlistCount: wishlist.length,
+                        totalSpent
+                    }
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message
+                });
+            }
+        });
+        app.post("/api/payments", async (req, res) => {
+            try {
+                const payment = req.body;
+
+                payment.paidAt = new Date();
+
+                const result = await paymentsCollection.insertOne(payment);
+
+                res.send({
+                    success: true,
+                    data: result,
+                    message: "Payment saved successfully"
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message
+                });
+            }
+        });
+        app.get("/api/payments/:buyerId", async (req, res) => {
+            try {
+                const buyerId = req.params.buyerId;
+
+                const payments = await paymentsCollection
+                    .find({ buyerId })
+                    .toArray();
+
+                res.send({
+                    success: true,
+                    data: payments
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message
+                });
+            }
+        });
+
+        app.get("/api/products", async (req, res) => {
+            try {
+                const products = await productsCollection
+                    .find()
+                    .sort({ _id: -1 })
+                    .toArray();
+
+                res.send({
+                    success: true,
+                    data: products
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message
+                });
+            }
+        });
+
 
         // Ping database
         await client.db("admin").command({ ping: 1 });
