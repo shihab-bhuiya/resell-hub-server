@@ -23,6 +23,8 @@ async function run() {
         const productsCollection = db.collection("products");
         const ordersCollection = db.collection("orders");
         const usersCollection = db.collection("users");
+        const paymentsCollection = db.collection("payments")
+        const wishlistCollection = db.collection("wishlist")
 
         console.log("✅ MongoDB Connected");
 
@@ -464,6 +466,27 @@ async function run() {
                 res.send({
                     success: true,
                     data: wishlist
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message
+                });
+            }
+        });
+
+
+        app.delete("/api/wishlist/:id", async (req, res) => {
+            try {
+                const id = req.params.id;
+
+                const result = await wishlistCollection.deleteOne({
+                    _id: new ObjectId(id)
+                });
+
+                res.send({
+                    success: true,
+                    data: result
                 });
             } catch (error) {
                 res.status(500).send({
