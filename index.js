@@ -400,6 +400,79 @@ async function run() {
             }
         });
 
+        app.get("/api/orders/buyer/:buyerId", async (req, res) => {
+            try {
+                const buyerId = req.params.buyerId;
+
+                const orders = await ordersCollection
+                    .find({ buyerId })
+                    .toArray();
+
+                res.send({
+                    success: true,
+                    data: orders,
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message,
+                });
+            }
+        });
+
+        // Wishlist Api
+        app.post("/api/wishlist", async (req, res) => {
+            try {
+                const wishlistData = req.body;
+
+                const existing = await wishlistCollection.findOne({
+                    buyerId: wishlistData.buyerId,
+                    productId: wishlistData.productId
+                });
+
+                if (existing) {
+                    return res.send({
+                        success: false,
+                        message: "Already in wishlist"
+                    });
+                }
+
+                wishlistData.savedAt = new Date();
+
+                const result = await wishlistCollection.insertOne(wishlistData);
+
+                res.send({
+                    success: true,
+                    data: result
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message
+                });
+            }
+        });
+
+        app.get("/api/wishlist/:buyerId", async (req, res) => {
+            try {
+                const buyerId = req.params.buyerId;
+
+                const wishlist = await wishlistCollection.find({
+                    buyerId
+                }).toArray();
+
+                res.send({
+                    success: true,
+                    data: wishlist
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message
+                });
+            }
+        });
+
 
         // Ping database
         await client.db("admin").command({ ping: 1 });
