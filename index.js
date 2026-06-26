@@ -362,6 +362,45 @@ async function run() {
             }
         });
 
+
+        // Buyer Api
+        app.get("/api/buyer-overview/:buyerId", async (req, res) => {
+            try {
+                const buyerId = req.params.buyerId;
+
+                const orders = await ordersCollection
+                    .find({ buyerId })
+                    .toArray();
+
+                const totalOrders = orders.length;
+                const pendingOrders = orders.filter(
+                    o =>
+                        o.orderStatus === "pending" ||
+                        o.orderStatus === "confirmed" ||
+                        o.orderStatus === "shipped"
+                ).length;
+
+                const completedOrders = orders.filter(
+                    o => o.orderStatus === "delivered"
+                ).length;
+
+                res.send({
+                    success: true,
+                    data: {
+                        totalOrders,
+                        pendingOrders,
+                        completedOrders,
+                    },
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message,
+                });
+            }
+        });
+
+
         // Ping database
         await client.db("admin").command({ ping: 1 });
         console.log("✅ Pinged MongoDB successfully.");
