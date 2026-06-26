@@ -496,6 +496,27 @@ async function run() {
             }
         });
 
+        // Payments Api
+        app.get("/api/payments/:buyerId", async (req, res) => {
+            try {
+                const buyerId = req.params.buyerId;
+
+                const payments = await paymentsCollection
+                    .find({ buyerId })
+                    .toArray();
+
+                res.send({
+                    success: true,
+                    data: payments
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message
+                });
+            }
+        });
+
 
         // Ping database
         await client.db("admin").command({ ping: 1 });
