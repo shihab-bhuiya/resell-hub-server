@@ -709,6 +709,118 @@ async function run() {
             });
         });
 
+        app.delete("/api/products/:id", async (req, res) => {
+            const id = req.params.id;
+
+            const result = await productsCollection.deleteOne({
+                _id: new ObjectId(id),
+            });
+
+            res.send({
+                success: true,
+                data: result,
+            });
+        });
+
+
+        // Admin order status API
+
+        app.patch("/api/orders/:id", async (req, res) => {
+            const id = req.params.id;
+            const { orderStatus } = req.body;
+
+            const result = await ordersCollection.updateOne(
+                { _id: new ObjectId(id) },
+                {
+                    $set: { orderStatus },
+                }
+            );
+
+            res.send({
+                success: true,
+                data: result,
+            });
+        });
+
+        // Admin Users API
+        app.get("/api/users", async (req, res) => {
+            try {
+                const users = await usersCollection.find().toArray();
+
+                res.send({
+                    success: true,
+                    data: users,
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message,
+                });
+            }
+        });
+
+
+        app.patch("/api/users/:id", async (req, res) => {
+            try {
+                const id = req.params.id;
+                const { status } = req.body;
+
+                const result = await usersCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    {
+                        $set: { status },
+                    }
+                );
+
+                res.send({
+                    success: true,
+                    data: result,
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message,
+                });
+            }
+        });
+
+        app.delete("/api/users/:id", async (req, res) => {
+            try {
+                const id = req.params.id;
+
+                const result = await usersCollection.deleteOne({
+                    _id: new ObjectId(id),
+                });
+
+                res.send({
+                    success: true,
+                    data: result,
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message,
+                });
+            }
+        });
+
+        // admin product management api
+        app.get("/api/products", async (req, res) => {
+            try {
+                const products = await productsCollection.find().toArray();
+
+                res.send({
+                    success: true,
+                    data: products,
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message,
+                });
+            }
+        });
+
 
         // Ping database
         await client.db("admin").command({ ping: 1 });
