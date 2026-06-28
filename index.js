@@ -22,7 +22,7 @@ async function run() {
         const db = client.db("resell-hub");
         const productsCollection = db.collection("products");
         const ordersCollection = db.collection("orders");
-        const usersCollection = db.collection("users");
+        const usersCollection = db.collection("user");
         const paymentsCollection = db.collection("payments")
         const wishlistCollection = db.collection("wishlist")
 
@@ -629,6 +629,85 @@ async function run() {
         });
 
         // Admin Apis
+        app.get("/api/admin/overview", async (req, res) => {
+            try {
+                const totalUsers = await usersCollection.countDocuments();
+                const totalProducts = await productsCollection.countDocuments();
+                const totalOrders = await ordersCollection.countDocuments();
+
+                res.send({
+                    success: true,
+                    data: {
+                        totalUsers,
+                        totalProducts,
+                        totalOrders,
+                    },
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message,
+                });
+            }
+        });
+
+        // Read all users
+        app.get("/api/users", async (req, res) => {
+            const users = await usersCollection.find().toArray();
+
+            res.send({
+                success: true,
+                data: users,
+            });
+        });
+        app.patch("/api/users/:id", async (req, res) => {
+            const id = req.params.id;
+            const { status } = req.body;
+
+            const result = await usersCollection.updateOne(
+                { _id: new ObjectId(id) },
+                {
+                    $set: { status },
+                }
+            );
+
+            res.send({
+                success: true,
+                data: result,
+            });
+        });
+
+        app.delete("/api/users/:id", async (req, res) => {
+            const id = req.params.id;
+
+            const result = await usersCollection.deleteOne({
+                _id: new ObjectId(id),
+            });
+
+            res.send({
+                success: true,
+                data: result,
+            });
+        });
+
+        // Admin product API
+
+        app.patch("/api/products/:id", async (req, res) => {
+            const id = req.params.id;
+            const { status } = req.body;
+
+            const result = await productsCollection.updateOne(
+                { _id: new ObjectId(id) },
+                {
+                    $set: { status },
+                }
+            );
+
+            res.send({
+                success: true,
+                data: result,
+            });
+        });
 
 
         // Ping database
