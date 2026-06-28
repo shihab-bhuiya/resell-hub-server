@@ -609,11 +609,12 @@ async function run() {
             }
         });
 
+
+        // Get All Products of DB
         app.get("/api/products", async (req, res) => {
             try {
                 const products = await productsCollection
-                    .find()
-                    .sort({ _id: -1 })
+                    .find({ status: "approved" })
                     .toArray();
 
                 res.send({
@@ -624,6 +625,22 @@ async function run() {
                 res.status(500).send({
                     success: false,
                     message: error.message
+                });
+            }
+        });
+
+        app.get("/api/admin/products", async (req, res) => {
+            try {
+                const products = await productsCollection.find().toArray();
+
+                res.send({
+                    success: true,
+                    data: products,
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message,
                 });
             }
         });
@@ -821,6 +838,132 @@ async function run() {
             }
         });
 
+        app.patch("/api/products/:id", async (req, res) => {
+            try {
+                const id = req.params.id;
+                const { status } = req.body;
+
+                const result = await productsCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    {
+                        $set: { status },
+                    }
+                );
+
+                res.send({
+                    success: true,
+                    data: result,
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message,
+                });
+            }
+        });
+
+        app.delete("/api/products/:id", async (req, res) => {
+            try {
+                const id = req.params.id;
+
+                const result = await productsCollection.deleteOne({
+                    _id: new ObjectId(id),
+                });
+
+                res.send({
+                    success: true,
+                    data: result,
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message,
+                });
+            }
+        });
+
+        // Get All orders 
+
+        app.get("/api/orders", async (req, res) => {
+            try {
+                const orders = await ordersCollection.find().toArray();
+
+                res.send({
+                    success: true,
+                    data: orders,
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message,
+                });
+            }
+        });
+        // Update Orders 
+
+        app.patch("/api/orders/:id", async (req, res) => {
+            try {
+                const id = req.params.id;
+                const { orderStatus } = req.body;
+
+                const result = await ordersCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    {
+                        $set: { orderStatus },
+                    }
+                );
+
+                res.send({
+                    success: true,
+                    data: result,
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message,
+                });
+            }
+        });
+
+        // Buyer overview API
+        app.get("/api/buyer/overview/:buyerId", async (req, res) => {
+            try {
+                const buyerId = req.params.buyerId;
+
+                const totalOrders = await ordersCollection.countDocuments({
+                    buyerId,
+                });
+
+                const pendingOrders = await ordersCollection.countDocuments({
+                    buyerId,
+                    orderStatus: "pending",
+                });
+
+                const wishlistItems = await wishlistCollection.countDocuments({
+                    buyerId,
+                });
+
+                const paidOrders = await ordersCollection.countDocuments({
+                    buyerId,
+                    paymentStatus: "paid",
+                });
+
+                res.send({
+                    success: true,
+                    data: {
+                        totalOrders,
+                        pendingOrders,
+                        wishlistItems,
+                        paidOrders,
+                    },
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message,
+                });
+            }
+        });
 
         // Ping database
         await client.db("admin").command({ ping: 1 });
