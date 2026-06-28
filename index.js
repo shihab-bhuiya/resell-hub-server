@@ -157,6 +157,8 @@ async function run() {
             }
         });
 
+        // Api Orders
+
         app.post("/api/orders", async (req, res) => {
             try {
                 const order = req.body;
@@ -625,6 +627,8 @@ async function run() {
                 });
             }
         });
+
+        // Admin Apis
 
 
         // Ping database
