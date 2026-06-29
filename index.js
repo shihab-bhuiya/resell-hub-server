@@ -614,9 +614,10 @@ async function run() {
         app.get("/api/products", async (req, res) => {
             try {
                 const products = await productsCollection
-                    .find({ status: "approved" })
+                    .find({
+                        sold: { $ne: true },
+                    })
                     .toArray();
-
                 res.send({
                     success: true,
                     data: products
@@ -955,6 +956,196 @@ async function run() {
                         pendingOrders,
                         wishlistItems,
                         paidOrders,
+                    },
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message,
+                });
+            }
+        });
+
+        app.post("/api/payments", async (req, res) => {
+            try {
+                const payment = req.body;
+
+                const existing = await paymentsCollection.findOne({
+                    transactionId: payment.transactionId,
+                });
+
+                if (existing) {
+                    return res.send({
+                        success: true,
+                        message: "Payment already saved",
+                    });
+                }
+
+                const paymentResult =
+                    await paymentsCollection.insertOne(payment);
+
+                const order = {
+                    buyerId: payment.buyerId,
+                    sellerId: payment.sellerId,
+                    productId: payment.productId,
+                    transactionId: payment.transactionId,
+
+                    orderStatus: "pending",
+                    paymentStatus: "paid",
+
+                    amount: payment.paymentAmount,
+                    createdAt: new Date(),
+                };
+
+                const orderResult =
+                    await productsCollection.updateOne(
+                        {
+                            _id: new ObjectId(payment.productId),
+                        },
+                        {
+                            $set: {
+                                sold: true,
+                                soldAt: new Date(),
+                            },
+                        }
+                    );
+
+                res.send({
+                    success: true,
+                    paymentResult,
+                    orderResult,
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message,
+                });
+            }
+        });
+
+        // Api for category page
+        app.get("/api/categories", async (req, res) => {
+            try {
+                const categories =
+                    await productsCollection.distinct("category");
+
+                res.send({
+                    success: true,
+                    data: categories,
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message,
+                });
+            }
+        });
+
+        app.get("/api/categories/:category", async (req, res) => {
+            try {
+                const category = req.params.category;
+
+                const products = await productsCollection
+                    .find({
+                        category,
+                        status: "approved",
+                    })
+                    .toArray();
+
+                res.send({
+                    success: true,
+                    data: products,
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message,
+                });
+            }
+        });
+        app.get("/api/categories", async (req, res) => {
+            try {
+                const categories =
+                    await productsCollection.distinct("category", {
+                        status: "approved",
+                    });
+
+                res.send({
+                    success: true,
+                    data: categories,
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message,
+                });
+            }
+        });
+
+        app.get("/api/categories/:category", async (req, res) => {
+            try {
+                const category = req.params.category;
+
+                const products =
+                    await productsCollection
+                        .find({
+                            category,
+                            status: "approved",
+                        })
+                        .toArray();
+
+                res.send({
+                    success: true,
+                    data: products,
+                });
+            } catch (error) {
+                res.status(500).send({
+                    success: false,
+                    message: error.message,
+                });
+            }
+        });
+
+        app.get("/api/featured-products", async (req, res) => {
+            const products = await productsCollection
+                .find({ status: "approved" })
+                .limit(8)
+                .toArray();
+
+            res.send({
+                success: true,
+                data: products,
+            });
+        });
+
+        // MarketPlace Stats API
+        app.get("/api/stats", async (req, res) => {
+            try {
+                const totalProducts =
+                    await productsCollection.countDocuments();
+
+                const totalSellers =
+                    await usersCollection.countDocuments({
+                        role: "seller",
+                    });
+
+                const totalBuyers =
+                    await usersCollection.countDocuments({
+                        role: "buyer",
+                    });
+
+                const completedOrders =
+                    await ordersCollection.countDocuments({
+                        orderStatus: "delivered",
+                    });
+
+                res.send({
+                    success: true,
+                    data: {
+                        totalProducts,
+                        totalSellers,
+                        totalBuyers,
+                        completedOrders,
                     },
                 });
             } catch (error) {
