@@ -17,7 +17,7 @@ const client = new MongoClient(uri);
 
 async function run() {
     try {
-        await client.connect();
+        // await client.connect();
 
         const db = client.db("resell-hub");
         const productsCollection = db.collection("products");
@@ -1157,7 +1157,7 @@ async function run() {
         });
 
         // Ping database
-        await client.db("admin").command({ ping: 1 });
+        // await client.db("admin").command({ ping: 1 });
         console.log("✅ Pinged MongoDB successfully.");
     } catch (err) {
         console.error("MongoDB Connection Error:", err);
